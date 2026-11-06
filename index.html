@@ -97,13 +97,13 @@
   }
 
   function render() {
-    $q.innerHTML = ''; $q.appendChild(document.createTextNode('What is ')); $q.appendChild(el('b', null, n + '!')); $q.appendChild(document.createTextNode('?'));
+    $q.innerHTML = ''; $q.appendChild(document.createTextNode('Evaluate ')); $q.appendChild(el('b', null, n + '!'));
     $area.innerHTML = '';
     if (status === 'ask') {
       var r = el('div', 'row');
       r.appendChild(el('span', 'eq', n + '! ='));
       var inp = el('input'); inp.id = 'ans'; inp.type = 'text'; inp.inputMode = 'numeric'; inp.autocomplete = 'off';
-      inp.setAttribute('aria-label', 'What is ' + n + ' factorial?');
+      inp.setAttribute('aria-label', 'Evaluate ' + n + ' factorial');
       inp.addEventListener('input', function () { var v = read(inp); if (v === answer) done('correct'); });
       inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); check(inp); } });
       r.appendChild(inp);
