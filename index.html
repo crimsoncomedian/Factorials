@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Factorials</title>
+<style>
+  :root {
+    --bg: #f5f6fa; --card: #ffffff; --ink: #1c2333; --muted: #5b6477;
+    --line: #c9d0e0; --accent: #3355d6; --accent-ink: #ffffff;
+    --soft: #eef1fb; --good: #1f7a37; --good-bg: #e4f5e9; --bad: #b42323; --bad-bg: #fdeaea; --info-bg: #dfe7ff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12151d; --card: #1b2030; --ink: #e8ecf6; --muted: #9aa5bd;
+      --line: #394261; --accent: #7b96ff; --accent-ink: #0d1226;
+      --soft: #232a40; --good: #6fd68b; --good-bg: #1b3326; --bad: #ff8c8c; --bad-bg: #3a1c1c; --info-bg: #2a3558;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 18px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 640px; margin: 0 auto; padding: 20px 16px 48px; }
+  h1 { font-size: 1.5rem; margin: 0 0 12px; }
+  .card { background: var(--card); border-radius: 14px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+  .def { margin: 0 0 14px; color: var(--muted); font-size: .95rem; }
+  .q { font-size: 1.3rem; margin: 0 0 14px; }
+  .q b { font-size: 2.4rem; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  button { font: inherit; cursor: pointer; }
+  .btn { border: 2px solid var(--accent); background: transparent; color: var(--accent); border-radius: 10px; padding: 8px 16px; font-weight: 600; font-size: 1rem; }
+  .btn.cta { background: var(--accent); color: var(--accent-ink); margin-top: 12px; }
+  :focus-visible { outline: 3px solid #f08c00; outline-offset: 2px; }
+  .eq { font-size: 1.6rem; font-weight: 800; }
+  input {
+    width: 210px; max-width: 100%; font: inherit; font-size: 1.5rem; font-weight: 700; text-align: center; padding: 6px;
+    border-radius: 10px; border: 2px dashed var(--accent); background: var(--card); color: var(--ink);
+  }
+  .err { margin-top: 12px; padding: 8px 12px; border-radius: 10px; background: var(--bad-bg); color: var(--bad); font-size: .95rem; line-height: 1.35; }
+  .banner { margin: 0 0 12px; padding: 8px 12px; border-radius: 10px; font-weight: 700; }
+  .banner.good { background: var(--good-bg); color: var(--good); }
+  .banner.info { background: var(--info-bg); }
+  .how { border: 2px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .how > div { padding: 10px 14px; }
+  .how .head { background: var(--soft); font-size: 1.1rem; font-weight: 700; }
+  .how ol { margin: 0; padding: 0; list-style: none; }
+  .how li { padding: 3px 0; font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+  .how .total { border-top: 2px solid var(--line); background: var(--good-bg); font-weight: 800; font-size: 1.25rem; }
+  .how .tip { color: var(--muted); font-size: .9rem; padding-top: 0; }
+  @media (max-width: 480px) { body { font-size: 16px; } main { padding: 12px 8px 32px; } .card { padding: 14px; } .q b { font-size: 2rem; } input { width: 100%; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Factorials</h1>
+  <div class="card">
+    <p class="def">The factorial <b>n!</b> means multiply every whole number from <b>n</b> down to <b>1</b>.</p>
+    <p class="q" id="q"></p>
+    <div id="area"></div>
+  </div>
+</main>
+
+<script>
+(function () {
+  var MIN = 2, MAX = 10;                    // 10! = 3,628,800 is as big as it gets
+  var n, answer, status, errText, lastN = null;   // status: 'ask' | 'correct' | 'shown'
+
+  var $q = document.getElementById('q'), $area = document.getElementById('area');
+
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function fmt(x) { return x.toLocaleString('en-US'); }
+  function fact(k) { return k <= 1 ? 1 : k * fact(k - 1); }
+  function expansion(k) { var t = []; for (var i = k; i >= 1; i--) t.push(i); return t.join(' × '); }
+
+  function next(force) {
+    do { n = force || MIN + Math.floor(Math.random() * (MAX - MIN + 1)); } while (!force && n === lastN);
+    lastN = n; answer = fact(n); status = 'ask'; errText = '';
+    render();
+  }
+
+  // The multiplication chain: 6 x 5 = 30, 30 x 4 = 120, ...
+  function chain() {
+    var steps = [], run = n;
+    for (var i = n - 1; i >= 2; i--) { steps.push(fmt(run) + ' × ' + i + ' = ' + fmt(run * i)); run *= i; }
+    return steps;
+  }
+  function howBox(showSteps) {
+    var box = el('div', 'how');
+    box.appendChild(el('div', 'head', n + '! = ' + expansion(n)));
+    if (showSteps) {
+      var s = el('div'), ol = el('ol');
+      chain().forEach(function (t) { ol.appendChild(el('li', null, t)); });
+      s.appendChild(ol); box.appendChild(s);
+      box.appendChild(el('div', 'tip', 'Multiplying by 1 does not change anything, so we can stop at 2.'));
+    }
+    box.appendChild(el('div', 'total', n + '! = ' + fmt(answer)));
+    return box;
+  }
+
+  function render() {
+    $q.innerHTML = ''; $q.appendChild(document.createTextNode('What is ')); $q.appendChild(el('b', null, n + '!')); $q.appendChild(document.createTextNode('?'));
+    $area.innerHTML = '';
+    if (status === 'ask') {
+      var r = el('div', 'row');
+      r.appendChild(el('span', 'eq', n + '! ='));
+      var inp = el('input'); inp.id = 'ans'; inp.type = 'text'; inp.inputMode = 'numeric'; inp.autocomplete = 'off';
+      inp.setAttribute('aria-label', 'What is ' + n + ' factorial?');
+      inp.addEventListener('input', function () { var v = read(inp); if (v === answer) done('correct'); });
+      inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); check(inp); } });
+      r.appendChild(inp);
+      $area.appendChild(r);
+      var r2 = el('div', 'row'); r2.style.marginTop = '12px';
+      var chk = el('button', 'btn', 'Check'), show = el('button', 'btn', 'Show me');
+      chk.addEventListener('click', function () { check(inp); });
+      show.addEventListener('click', function () { done('shown'); });
+      r2.appendChild(chk); r2.appendChild(show); $area.appendChild(r2);
+      if (errText) $area.appendChild(el('div', 'err', errText));
+      if (matchMedia('(pointer: fine)').matches) inp.focus({ preventScroll: true });
+      return;
+    }
+    $area.appendChild(el('div', 'banner ' + (status === 'correct' ? 'good' : 'info'), status === 'correct' ? '✅ Correct!' : 'Here is how it works:'));
+    $area.appendChild(howBox(status === 'shown'));
+    var nx = el('button', 'btn cta', 'Next number'); nx.addEventListener('click', function () { next(); });
+    $area.appendChild(nx); nx.focus({ preventScroll: true });
+  }
+
+  function read(inp) { var t = inp.value.replace(/[,\s]/g, ''); return /^\d+$/.test(t) ? parseInt(t, 10) : NaN; }
+  function done(s) { status = s; render(); }
+
+  function check(inp) {
+    var v = read(inp);
+    if (isNaN(v)) { errText = 'Type a whole number.'; }
+    else if (v === answer) return done('correct');
+    else errText = 'Not quite — ' + (v > answer ? 'that is too big. ' : 'that is too small. ') + n + '! means ' + expansion(n) + '. Try again, or press “Show me.”';
+    var keep = inp.value; render();
+    var i2 = document.getElementById('ans'); i2.value = keep;
+  }
+
+  // optional: ?n=6 in the URL sets the first problem (handy for teachers)
+  var q = parseInt(new URLSearchParams(location.search).get('n'), 10);
+  next(q >= MIN && q <= MAX ? q : null);
+})();
+</script>
+</body>
+</html>
